@@ -4,7 +4,7 @@ const {openDatabase: open, closeDatabase:close} = require('./DatabaseConnection'
 function getLevel(){
 open();
 // Run the SQL statement to select all level
-const result = sqlite.run("SELECT * FROM Level_Information");
+const result = sqlite.run("SELECT * FROM Level");
 close();
 
 return result;
@@ -12,8 +12,8 @@ return result;
 
 function getLevelRange(level){
     open();
-    const query = sqlite.run(`SELECT startAt, endAt FROM Level_Information WHERE LevelId LIKE ` + level)
-
+    const query = sqlite.run(`SELECT startAt, endAt FROM Level WHERE LevelId LIKE ` + level);
+console.log(sqlite.run(`SELECT startAt, endAt FROM Level WHERE LevelId LIKE ` + level))
     if (query.length > 0) {
         return {startAt: query[0]['startAt'], endAt: query[0]['endAt']};
     } else {
