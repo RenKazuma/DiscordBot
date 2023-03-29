@@ -30,6 +30,21 @@ client.on("ready", () => {
 
   console.log("💖 Status umgestellt");
 
+  const axios = require('axios');
+  
+      axios.get(process.env.Api +'weatherforecast')
+        .then(response => {
+          console.log(JSON.stringify(response.data));
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    
+
+  
+  
+
+
   const GetLevelJs = require('./database/GetLevel.js');
   GetLevelJs.getLevel();
 
