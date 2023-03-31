@@ -1,6 +1,7 @@
 const {openDatabase: open, closeDatabase:close, openDatabase} = require('./DatabaseConnection');
 const sqlite = require('sqlite-sync');
 require('dotenv').config();
+const http = require('http');
 
 async function getUserId(guildId, userId){
     const { client } = require('../index');
@@ -22,32 +23,53 @@ async function getDisplayName(userId) {
   
 
 function getUserLevel(userId){
-    open();
 
-    const objectArray = sqlite.run(`SELECT Current_Level FROM User WHERE DiscordId Like ` + userId);
-    if (objectArray.length > 0) {
-        const currentLevel = objectArray[0]['Current_Level'];
-        close();
-        return currentLevel;
-    } else {
-        // handle case where no results were found
-        close();
-        return null;
-    }
+    const apiUrl = process.env.Api +  'User/Current_Level';
+    const urlWithQuery = apiUrl + `?userId=${userId}`;
+    http.get(urlWithQuery, (response) => {
+        let data = '';
+      
+        // Receive data in chunks
+        response.on('data', (chunk) => {
+          data += chunk;
+        });
+      
+        // When all data has been received
+        response.on('end', () => {
+          // Parse the received JSON data
+          const userData = JSON.parse(data);
+
+          return userData.current_Level;
+        });
+      }).on('error', (error) => {
+        console.error(error);
+      });
+ 
 }
 
-function getUserExperience(userId){
-    open();
-    const objectArray = sqlite.run(`SELECT Current_Exp FROM User WHERE DiscordId Like ` + userId)
-    if (objectArray.length > 0) {
-        const currentExp = objectArray[0]['Current_Exp'];
-        close();
-        return currentExp;
-    } else {
-        // handle case where no results were found
-        close();
-        return null;
-    }
+async function getUserLevelAndExperience(userId) {
+  return await new Promise((resolve, reject) => {
+    const apiUrl = process.env.Api +  'User/Current_Level_And_Exp';
+    const urlWithQuery = apiUrl + `?userId=${userId}`;;
+    http.get(urlWithQuery, (response) => {
+      let data = '';
+
+      // Receive data in chunks
+      response.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      // When all data has been received
+      response.on('end', () => {
+        // Parse the received JSON data
+        const userData = JSON.parse(data);
+
+        resolve(userData);
+      });
+    }).on('error', (error) => {
+      reject(error);
+    });
+  });
 }
 
 function getLeaderboard(){
@@ -63,7 +85,7 @@ function getLeaderboard(){
 
 module.exports = {
     getUserLevel: getUserLevel,
-    getUserExperience: getUserExperience,
+    getUserLevelAndExperience: getUserLevelAndExperience,
     getUserId: getUserId,
     getLeaderboard: getLeaderboard,
     getDisplayName: getDisplayName

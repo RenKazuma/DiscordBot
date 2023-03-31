@@ -30,8 +30,10 @@ module.exports = {
     try {
       //Get current User with data
       var newUser = await getUserInformation.getUserId(interaction.guild.id, user);
-      var currentUserLevel = await getUserInformation.getUserLevel(newUser.id);
-      var currentUserExp = await getUserInformation.getUserExperience(newUser.id);
+
+      const receivedQuery = await getUserInformation.getUserLevelAndExperience(newUser.id.toString());
+      var currentUserLevel = receivedQuery["currentLevel"];
+      var currentUserExp = receivedQuery["currentExp"];
       var { startAt, endAt } = await require('../database/GetLevel').getLevelRange(currentUserLevel);
     } catch (error) {
       console.error(error);

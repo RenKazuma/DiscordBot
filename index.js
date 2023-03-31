@@ -4,6 +4,7 @@ const prefix = "L!";
 const getUserInformation = require('./database/GetUserInformation');
 const databaseActions = require('./database/DatabaseConnection');
 require("./deploy-commands");
+const http = require('http');
 
 const {
   Client,
@@ -25,25 +26,10 @@ client.on("ready", () => {
   console.log("⚪ Ich bin online!");
   client.user.setPresence({
     activities: [{ name: "how to create a discord bot", type: "Playing" }],
-    status: "idle",
+    status: "online",
   });
 
   console.log("💖 Status umgestellt");
-
-  const axios = require('axios');
-  
-      axios.get(process.env.Api +'weatherforecast')
-        .then(response => {
-          console.log(JSON.stringify(response.data));
-        })
-        .catch(error => {
-          console.log(error);
-        });
-    
-
-  
-  
-
 
   const GetLevelJs = require('./database/GetLevel.js');
   GetLevelJs.getLevel();
@@ -65,10 +51,33 @@ client.on("messageCreate", async function (message) {
   //Give User Exp
 
   var userId = message.author.id;
-  var currentUserLevel = await getUserInformation.getUserLevel(userId);
-  var currentUserExp = await getUserInformation.getUserExperience(userId);
-  var getExp = await require('./methods/Exp').getLevelExpierence();
 
+  var receivedQuery = await new Promise((resolve, reject) => {
+    const apiUrl = process.env.Api +  'User/Current_Level_And_Exp';
+    const urlWithQuery = apiUrl + `?userId=${userId}`;
+    console.log(urlWithQuery);
+    http.get(urlWithQuery, (response) => {
+      let data = '';
+
+      // Receive data in chunks
+      response.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      // When all data has been received
+      response.on('end', () => {
+        // Parse the received JSON data
+        const userData = JSON.parse(data);
+
+        resolve(userData);
+      });
+    }).on('error', (error) => {
+      reject(error);
+    });
+  });
+  var currentUserLevel = receivedQuery["currentLevel"];
+  var currentUserExp = receivedQuery["currentExp"];
+  var getExp = await require('./methods/Exp').getLevelExpierence();
   if(!currentUserExp){
     try{
     databaseActions.insertIntoValue('Current_Level, Current_Exp, DiscordId', 'User', ('1,' + getExp + ', ' + userId));
@@ -89,7 +98,6 @@ client.on("messageCreate", async function (message) {
         Current_Exp: parseInt(currentUserExp) + parseInt(getExp),
       };
       await databaseActions.updateValues(updates, 'User', 'DiscordId = ' + userId);
-
       return;
     }
 
